@@ -21,6 +21,7 @@
 		<commons-collections4.version>4.1</commons-collections4.version>
 		<commons-io.version>2.5</commons-io.version>
 		<commons-lang3.version>3.6</commons-lang3.version>
+		<commons-text.version>1.1</commons-text.version>
 		<findbugs.version>3.0.4</findbugs.version>
 		<findbugs-annotation.version>3.0.2</findbugs-annotation.version>
 		<guava.version>21.0</guava.version>
@@ -57,6 +58,12 @@
 				<artifactId>commons-io</artifactId>
 				<version>${commons-io.version}</version>
 			</dependency>
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-text</artifactId>
+				<version>${commons-text.version}</version>
+			</dependency>
+
 			<dependency>
 				<groupId>org.apache.httpcomponents</groupId>
 				<artifactId>httpclient</artifactId>
@@ -209,28 +216,6 @@
 						</configuration>
 					</execution>
 				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>cobertura-maven-plugin</artifactId>
-				<executions>
-					<execution>
-						<phase>install</phase>
-						<goals>
-							<goal>cobertura</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<formats>
-						<format>html</format>
-						<format>xml</format>
-					</formats>
-					<instrumentation>
-						<ignoreTrivial>false</ignoreTrivial>
-					</instrumentation>
-					<aggregate>true</aggregate>
-				</configuration>
 			</plugin>
 		</plugins>
 	</build>
