@@ -1,6 +1,8 @@
 package us.chenyang.ducky.shared.utils;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -9,9 +11,9 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
-public final class NetworkUtils {
+public final class Utils {
 
-    private NetworkUtils() {
+    private Utils() {
     }
 
     public static CookieStore getSessionCookies(final String url) {
@@ -28,6 +30,9 @@ public final class NetworkUtils {
         return null;
     }
 
+    public static double doubleOf(final double value, int scale) {
+        return BigDecimal.valueOf(value).setScale(scale, RoundingMode.HALF_UP).doubleValue();
+    }
 
 
 }

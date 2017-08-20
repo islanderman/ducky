@@ -15,18 +15,20 @@ public final class Pusher {
         while (true) {
             System.out.println(LocalDateTime.now());
             String temp = WUndergroundAPI.getURL(args[0], args[1], args[2], args[3], args[4], args[5]);
+            
             try {
                 if (StringUtils.equals(temp, url)) {
                     System.out.println("No Change - Wait for one minute and retry");
-                    Thread.sleep(1000 * 60);
+                    Thread.sleep(1000 * 30);
                     continue;
                 }
+                
                 url = temp;
-
+                
                 System.out.println(url);
                 System.out.println(IOUtils.toString(new URL(url), "UTF-8"));
                 Thread.sleep(1000 * 60 * 2);
-
+                
             } catch (IOException | InterruptedException e) {
                 System.err.println(e.getMessage());
             }

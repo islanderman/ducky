@@ -1,7 +1,5 @@
 package us.chenyang.ducky.pusher.wunderground;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -16,6 +14,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import us.chenyang.ducky.client.INetatmoClientConstant;
 import us.chenyang.ducky.client.NetatmoAPI;
+import us.chenyang.ducky.shared.utils.Utils;
 
 public class WUndergroundAPI implements IWUndergroundClientConstant {
     private WUndergroundAPI() {
@@ -31,8 +30,9 @@ public class WUndergroundAPI implements IWUndergroundClientConstant {
     public static Map<String, Object> getMap(final JsonNode node) {
 
         Map<String, Object> map = new HashMap<>();
+        JsonNode devices = node.get("body").get("devices");
 
-        for (JsonNode n : node.get("body").get("devices").get(0).get("modules")) {
+        for (JsonNode n : devices.get(0).get("modules")) {
             String type = n.get("type").textValue();
 
             switch (type) {
@@ -41,50 +41,46 @@ public class WUndergroundAPI implements IWUndergroundClientConstant {
                 map.put("rainin", n.get("dashboard_data").get("sum_rain_1").asLong());
                 break;
             case "NAModule1":
-                double humidity = BigDecimal.valueOf(n.get("dashboard_data").get("Humidity").asDouble())
-                        .setScale(2, RoundingMode.HALF_UP).doubleValue();
-
-                double tempature = getFahernheit(n.get("dashboard_data").get("Temperature").asDouble());
+                double humidity = Utils.doubleOf(n.get("dashboard_data").get("Humidity").asDouble(), 2);
+                double tempature = Utils.doubleOf(getFahernheit(n.get("dashboard_data").get("Temperature").asDouble()),
+                        2);
                 map.put("humidity", humidity);
                 map.put("tempf", tempature);
+
                 map.put("dewptf", getDewPoint(tempature, humidity));
-
                 map.put("dateutc",
-                        ZonedDateTime.ofInstant(Instant.ofEpochSecond(n.get("dashboard_data").get("time_utc").asLong()),
-                                ZoneOffset.UTC).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-
+                        ZonedDateTime.ofInstant(Instant.ofEpochSecond(n.get("last_message").asLong()), ZoneOffset.UTC)
+                                .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+                break;
+            case "NAMain":
+                map.put("baromin",
+                        Utils.doubleOf(
+                                node.get("body").get("devices").get(0).get("dashboard_data").get("Pressure").asDouble()
+                                        * 0.0295299830714,
+                                2));
                 break;
             default:
                 break;
             }
         }
         if (StringUtils.equalsAnyIgnoreCase("NAMain", node.get("body").get("devices").get(0).get("type").asText())) {
-            map.put("dateutc",
-                    ZonedDateTime
-                            .ofInstant(Instant.ofEpochSecond(node.get("body").get("devices").get(0)
-                                    .get("dashboard_data").get("time_utc").asLong()), ZoneOffset.UTC)
-                            .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
             map.put("baromin",
-                    BigDecimal.valueOf(
+                    Utils.doubleOf(
                             node.get("body").get("devices").get(0).get("dashboard_data").get("Pressure").asDouble()
-                                    * 0.0295299830714)
-                            .setScale(2, RoundingMode.HALF_UP).doubleValue());
-
+                                    * 0.0295299830714,
+                            2));
         }
 
         return map;
     }
 
     private static double getFahernheit(final double celsius) {
-        return BigDecimal.valueOf(32 + celsius * 9 / 5).setScale(2, RoundingMode.HALF_UP).doubleValue();
+        return 32 + celsius * 9 / 5;
     }
 
     private static double getDewPoint(final double temp, final double humidity) {
-        return BigDecimal
-                .valueOf(temp - (14.55 + 0.114 * temp) * (1 - 0.01 * humidity)
-                        - Math.pow((2.5 + 0.007 * temp) * (1 - 0.01 * humidity), 3)
-                        - (15.9 + 0.117 * temp) * Math.pow(1 - 0.01 * humidity, 14))
-                .setScale(2, RoundingMode.HALF_UP).doubleValue();
+        return Utils.doubleOf(243.04 * (Math.log(humidity / 100) + ((17.625 * temp) / (243.04 + temp)))
+                / (17.625 - Math.log(humidity / 100) - ((17.625 * temp) / (243.04 + temp))), 2);
     }
 
     private static String constructUrl(final String stationId, final String password, final Map<String, Object> map) {
