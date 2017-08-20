@@ -1,5 +1,7 @@
 package us.chenyang.ducky.pusher.wunderground;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -39,7 +41,9 @@ public class WUndergroundAPI implements IWUndergroundClientConstant {
                 map.put("rainin", n.get("dashboard_data").get("sum_rain_1").asLong());
                 break;
             case "NAModule1":
-                double humidity = n.get("dashboard_data").get("Humidity").asDouble();
+                double humidity = BigDecimal.valueOf(n.get("dashboard_data").get("Humidity").asDouble())
+                        .setScale(2, RoundingMode.HALF_UP).doubleValue();
+
                 double tempature = getFahernheit(n.get("dashboard_data").get("Temperature").asDouble());
                 map.put("humidity", humidity);
                 map.put("tempf", tempature);
@@ -55,22 +59,32 @@ public class WUndergroundAPI implements IWUndergroundClientConstant {
             }
         }
         if (StringUtils.equalsAnyIgnoreCase("NAMain", node.get("body").get("devices").get(0).get("type").asText())) {
-            map.put("dateutc", ZonedDateTime.ofInstant(Instant.ofEpochSecond(node.get("body").get("devices").get(0).get("dashboard_data").get("time_utc").asLong()), ZoneOffset.UTC).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-            map.put("baromin", node.get("body").get("devices").get(0).get("dashboard_data").get("Pressure").asDouble() * 0.0295299830714);
-        
+            map.put("dateutc",
+                    ZonedDateTime
+                            .ofInstant(Instant.ofEpochSecond(node.get("body").get("devices").get(0)
+                                    .get("dashboard_data").get("time_utc").asLong()), ZoneOffset.UTC)
+                            .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            map.put("baromin",
+                    BigDecimal.valueOf(
+                            node.get("body").get("devices").get(0).get("dashboard_data").get("Pressure").asDouble()
+                                    * 0.0295299830714)
+                            .setScale(2, RoundingMode.HALF_UP).doubleValue());
+
         }
-        
+
         return map;
     }
 
     private static double getFahernheit(final double celsius) {
-        return 32 + celsius * 9 / 5;
+        return BigDecimal.valueOf(32 + celsius * 9 / 5).setScale(2, RoundingMode.HALF_UP).doubleValue();
     }
 
     private static double getDewPoint(final double temp, final double humidity) {
-        return temp - (14.55 + 0.114 * temp) * (1 - 0.01 * humidity)
-                - Math.pow((2.5 + 0.007 * temp) * (1 - 0.01 * humidity), 3)
-                - (15.9 + 0.117 * temp) * Math.pow(1 - 0.01 * humidity, 14);
+        return BigDecimal
+                .valueOf(temp - (14.55 + 0.114 * temp) * (1 - 0.01 * humidity)
+                        - Math.pow((2.5 + 0.007 * temp) * (1 - 0.01 * humidity), 3)
+                        - (15.9 + 0.117 * temp) * Math.pow(1 - 0.01 * humidity, 14))
+                .setScale(2, RoundingMode.HALF_UP).doubleValue();
     }
 
     private static String constructUrl(final String stationId, final String password, final Map<String, Object> map) {
