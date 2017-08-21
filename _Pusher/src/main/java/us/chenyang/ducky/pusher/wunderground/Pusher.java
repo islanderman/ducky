@@ -18,7 +18,7 @@ public final class Pusher {
             
             try {
                 if (StringUtils.equals(temp, url)) {
-                    System.out.println("No Change - Wait for one minute and retry");
+                    System.out.println("No Change - Wait for 30 secs and retry");
                     Thread.sleep(1000 * 30);
                     continue;
                 }

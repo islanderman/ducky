@@ -1,11 +1,15 @@
 package us.chenyang.ducky.pusher.wunderground;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Map.Entry;
 
 import org.apache.commons.lang3.StringUtils;
@@ -48,9 +52,7 @@ public class WUndergroundAPI implements IWUndergroundClientConstant {
                 map.put("tempf", tempature);
 
                 map.put("dewptf", getDewPoint(tempature, humidity));
-                map.put("dateutc",
-                        ZonedDateTime.ofInstant(Instant.ofEpochSecond(n.get("last_message").asLong()), ZoneOffset.UTC)
-                                .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+                map.put("dateutc", getUTC(n.get("last_message").asLong()));
                 break;
             case "NAMain":
                 map.put("baromin",
@@ -74,6 +76,15 @@ public class WUndergroundAPI implements IWUndergroundClientConstant {
         return map;
     }
 
+    private static DateTimeFormatter CUSTOMIZED_FORMATTER = new DateTimeFormatterBuilder().parseCaseInsensitive()
+            .append(DateTimeFormatter.ISO_LOCAL_DATE).appendLiteral('+').append(DateTimeFormatter.ISO_LOCAL_TIME)
+            .toFormatter();
+
+    private static String getUTC(final long utc) {
+        return ZonedDateTime.ofInstant(Instant.ofEpochSecond(utc), ZoneOffset.UTC)
+                .format(CUSTOMIZED_FORMATTER);
+    }
+
     private static double getFahernheit(final double celsius) {
         return 32 + celsius * 9 / 5;
     }
@@ -88,7 +99,11 @@ public class WUndergroundAPI implements IWUndergroundClientConstant {
         builder.append("?ID=").append(stationId).append("&PASSWORD=").append(password);
 
         for (Entry<String, Object> entry : map.entrySet()) {
-            builder.append('&').append(entry.getKey()).append('=').append(entry.getValue());
+            try {
+                builder.append('&').append(URLEncoder.encode(entry.getKey(), "UTF-8")).append('=').append(URLEncoder.encode(Objects.toString(entry.getValue()), "UTF-8"));
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
         }
 
         return builder.toString();
