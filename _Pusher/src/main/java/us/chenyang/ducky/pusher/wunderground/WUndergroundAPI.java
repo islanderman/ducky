@@ -9,8 +9,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -46,31 +46,31 @@ public class WUndergroundAPI implements IWUndergroundClientConstant {
                 break;
             case "NAModule1":
                 double humidity = Utils.doubleOf(n.get("dashboard_data").get("Humidity").asDouble(), 2);
-                double tempature = Utils.doubleOf(getFahernheit(n.get("dashboard_data").get("Temperature").asDouble()),
-                        2);
+                double tempatureC = n.get("dashboard_data").get("Temperature").asDouble(); 
+                
+                double tempatureF = getFahernheit(tempatureC);;
+                double dewF = getFahernheit(getDewPoint(tempatureC, humidity));
+                
                 map.put("humidity", humidity);
-                map.put("tempf", tempature);
-
-                map.put("dewptf", getDewPoint(tempature, humidity));
-                map.put("dateutc", getUTC(n.get("last_message").asLong()));
+                map.put("tempf", tempatureF);
+                map.put("dewptf", dewF);
+                map.put("dateutc", getUTC(n.get("dashboard_data").get("time_utc").asLong()));
                 break;
             case "NAMain":
-                map.put("baromin",
-                        Utils.doubleOf(
-                                node.get("body").get("devices").get(0).get("dashboard_data").get("Pressure").asDouble()
-                                        * 0.0295299830714,
-                                2));
                 break;
             default:
                 break;
             }
         }
         if (StringUtils.equalsAnyIgnoreCase("NAMain", node.get("body").get("devices").get(0).get("type").asText())) {
-            map.put("baromin",
-                    Utils.doubleOf(
-                            node.get("body").get("devices").get(0).get("dashboard_data").get("Pressure").asDouble()
-                                    * 0.0295299830714,
-                            2));
+            double baromhPa = node.get("body").get("devices").get(0).get("dashboard_data").get("Pressure").asDouble(); 
+            double indoorC = node.get("body").get("devices").get(0).get("dashboard_data").get("Temperature").asDouble(); 
+            double indoorF = getFahernheit(indoorC);
+            double indoorHumidity= node.get("body").get("devices").get(0).get("dashboard_data").get("Humidity").asDouble();
+            
+            map.put("baromin", Utils.doubleOf(baromhPa * 0.0295299830714, 2));
+            map.put("indoortempf", indoorF);
+            map.put("indoorhumidity", indoorHumidity);
         }
 
         return map;
@@ -86,12 +86,14 @@ public class WUndergroundAPI implements IWUndergroundClientConstant {
     }
 
     private static double getFahernheit(final double celsius) {
-        return 32 + celsius * 9 / 5;
+        return Utils.doubleOf(32 + celsius * 9 / 5, 2);
     }
 
     private static double getDewPoint(final double temp, final double humidity) {
-        return Utils.doubleOf(243.04 * (Math.log(humidity / 100) + ((17.625 * temp) / (243.04 + temp)))
-                / (17.625 - Math.log(humidity / 100) - ((17.625 * temp) / (243.04 + temp))), 2);
+        return Utils.doubleOf(temp - (14.55 + 0.114 * temp) * (1 - (0.01 * humidity))
+                - Math.pow((2.5 + 0.007 * temp) * (1 - (0.01 * humidity)), 3)
+                - (15.9 + 0.117 * temp) * Math.pow(1 - (0.01 * humidity), 14), 2);
+        
     }
 
     private static String constructUrl(final String stationId, final String password, final Map<String, Object> map) {
