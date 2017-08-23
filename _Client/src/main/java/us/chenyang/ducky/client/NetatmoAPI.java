@@ -42,21 +42,6 @@ public class NetatmoAPI implements INetatmoClientConstant {
         }
         return null;
     }
-//
-//    public static String getAccessTokenFromKey(final String key, final String value) {
-//
-//        try (final CloseableHttpClient client = HttpClients.createDefault();
-//                final CloseableHttpResponse response = client.execute(getAuthKeyHttpPost(key, value));) {
-//
-//            String str = EntityUtils.toString(response.getEntity(), UTF8);
-//            return str;
-//
-//        } catch (IOException e) {
-//            // TODO Auto-generated catch block
-//            e.printStackTrace();
-//        }
-//        return null;
-//    }
 
     public static String getAccessToken(final String user, final String passwd, String clientKey, String clientSecret) {
         HttpClientContext context = HttpClientContext.create();

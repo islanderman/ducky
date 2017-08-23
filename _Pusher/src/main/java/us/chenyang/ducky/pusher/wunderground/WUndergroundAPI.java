@@ -7,7 +7,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -33,44 +33,63 @@ public class WUndergroundAPI implements IWUndergroundClientConstant {
 
     public static Map<String, Object> getMap(final JsonNode node) {
 
-        Map<String, Object> map = new HashMap<>();
+        Map<String, Object> map = new LinkedHashMap<>();
         JsonNode devices = node.get("body").get("devices");
 
+        if (StringUtils.equalsAnyIgnoreCase("NAMain", devices.get(0).get("type").asText())) {
+            double baromhPa = devices.get(0).get("dashboard_data").get("Pressure").asDouble(); 
+            double indoorC = devices.get(0).get("dashboard_data").get("Temperature").asDouble();
+            double indoorHumidity= devices.get(0).get("dashboard_data").get("Humidity").asDouble();
+            
+            double indoorF = getFahernheit(indoorC);
+            double baromin =  Utils.doubleOf(baromhPa * 0.0295299830714, 2);
+            
+            long utc = devices.get(0).get("dashboard_data").get("time_utc").asLong();
+            
+            String utcStr = getUTC(utc);
+            map.put("dateutc", utcStr);
+
+            System.out.println(ZonedDateTime.ofInstant(Instant.ofEpochSecond(utc), ZoneOffset.systemDefault()));
+            map.put("baromin", baromin);
+            map.put("indoortempf", indoorF);
+            map.put("indoorhumidity", indoorHumidity);
+        }
+
+        
         for (JsonNode n : devices.get(0).get("modules")) {
             String type = n.get("type").textValue();
 
             switch (type) {
             case "NAModule3":
-                map.put("dailyrainin", n.get("dashboard_data").get("sum_rain_24").asLong());
-                map.put("rainin", n.get("dashboard_data").get("sum_rain_1").asLong());
+                long sumRain = n.get("dashboard_data").get("sum_rain_24").asLong();
+                long rain = n.get("dashboard_data").get("sum_rain_1").asLong();
+                map.put("dailyrainin", sumRain);
+                map.put("rainin", rain);
                 break;
             case "NAModule1":
                 double humidity = Utils.doubleOf(n.get("dashboard_data").get("Humidity").asDouble(), 2);
-                double tempatureC = n.get("dashboard_data").get("Temperature").asDouble(); 
+                double tempatureC = n.get("dashboard_data").get("Temperature").asDouble();
                 
-                double tempatureF = getFahernheit(tempatureC);;
+                double tempatureF = getFahernheit(tempatureC);
+                
                 double dewF = getFahernheit(getDewPoint(tempatureC, humidity));
+
                 
                 map.put("humidity", humidity);
                 map.put("tempf", tempatureF);
                 map.put("dewptf", dewF);
-                map.put("dateutc", getUTC(n.get("dashboard_data").get("time_utc").asLong()));
+
+                System.out.println("Outside: "+tempatureC+"°C / "+ tempatureF + "°F");
+
+                
                 break;
-            case "NAMain":
+            case "NAModule4":
+                // nothing to know
+                
                 break;
             default:
                 break;
             }
-        }
-        if (StringUtils.equalsAnyIgnoreCase("NAMain", node.get("body").get("devices").get(0).get("type").asText())) {
-            double baromhPa = node.get("body").get("devices").get(0).get("dashboard_data").get("Pressure").asDouble(); 
-            double indoorC = node.get("body").get("devices").get(0).get("dashboard_data").get("Temperature").asDouble(); 
-            double indoorF = getFahernheit(indoorC);
-            double indoorHumidity= node.get("body").get("devices").get(0).get("dashboard_data").get("Humidity").asDouble();
-            
-            map.put("baromin", Utils.doubleOf(baromhPa * 0.0295299830714, 2));
-            map.put("indoortempf", indoorF);
-            map.put("indoorhumidity", indoorHumidity);
         }
 
         return map;
