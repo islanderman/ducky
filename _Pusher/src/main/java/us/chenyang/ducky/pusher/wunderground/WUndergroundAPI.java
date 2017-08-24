@@ -18,17 +18,17 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import us.chenyang.ducky.client.INetatmoClientConstant;
 import us.chenyang.ducky.client.NetatmoAPI;
+import us.chenyang.ducky.shared.model.NetatmoConfig;
+import us.chenyang.ducky.shared.model.WUndergroundConfig;
 import us.chenyang.ducky.shared.utils.Utils;
 
 public class WUndergroundAPI implements IWUndergroundClientConstant {
     private WUndergroundAPI() {
     }
 
-    public static String getURL(final String netatmoUser, final String netatmoPass, final String netatmoKey,
-            final String netatmoSecret, final String stationId, final String wuPassword) {
-        JsonNode node = NetatmoAPI.getNode(INetatmoClientConstant.API_GETMEASURE, netatmoUser, netatmoPass, netatmoKey,
-                netatmoSecret);
-        return constructUrl(stationId, wuPassword, getMap(node));
+    public static String getURL(NetatmoConfig netatMoconfig, final WUndergroundConfig wuConfig) {
+        JsonNode node = NetatmoAPI.getNode(INetatmoClientConstant.API_GETMEASURE, netatMoconfig);
+        return constructUrl(wuConfig, getMap(node));
     }
 
     public static Map<String, Object> getMap(final JsonNode node) {
@@ -115,9 +115,9 @@ public class WUndergroundAPI implements IWUndergroundClientConstant {
         
     }
 
-    private static String constructUrl(final String stationId, final String password, final Map<String, Object> map) {
+    private static String constructUrl(final WUndergroundConfig config, final Map<String, Object> map) {
         StringBuilder builder = new StringBuilder(WUnderground_UPLOAD);
-        builder.append("?ID=").append(stationId).append("&PASSWORD=").append(password);
+        builder.append("?ID=").append(config.getStationId()).append("&PASSWORD=").append(config.getWuPassword());
 
         for (Entry<String, Object> entry : map.entrySet()) {
             try {

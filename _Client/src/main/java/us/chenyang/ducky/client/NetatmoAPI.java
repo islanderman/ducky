@@ -20,6 +20,8 @@ import org.apache.http.util.EntityUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import us.chenyang.ducky.shared.model.NetatmoConfig;
+
 public class NetatmoAPI implements INetatmoClientConstant {
 
     private static final ObjectMapper mapper = new ObjectMapper();
@@ -27,11 +29,11 @@ public class NetatmoAPI implements INetatmoClientConstant {
     private NetatmoAPI() {
     }
 
-    public static JsonNode getNode(String url, String user, String password, String clientKey, String clientValue) {
-        
+    public static JsonNode getNode(final String url, final NetatmoConfig config) {
+
         try (final CloseableHttpClient client = HttpClients.createDefault();
                 final CloseableHttpResponse response = client
-                        .execute(new HttpGet(API_GETDATA + "?access_token=" + getAccessToken(user, password, clientKey, clientValue)));) {
+                        .execute(new HttpGet(API_GETDATA + "?access_token=" + getAccessToken(config)));) {
 
             String str = EntityUtils.toString(response.getEntity(), UTF8);
 
@@ -43,12 +45,12 @@ public class NetatmoAPI implements INetatmoClientConstant {
         return null;
     }
 
-    public static String getAccessToken(final String user, final String passwd, String clientKey, String clientSecret) {
+    public static String getAccessToken(final NetatmoConfig config) {
+
         HttpClientContext context = HttpClientContext.create();
 
         try (final CloseableHttpClient client = HttpClients.createDefault();
-                final CloseableHttpResponse response = client.execute(getAuthKeyHttpPost(user, passwd, clientKey,clientSecret),
-                        context)) {
+                final CloseableHttpResponse response = client.execute(getAuthKeyHttpPost(config), context)) {
 
             String str = EntityUtils.toString(response.getEntity(), UTF8);
 
@@ -60,16 +62,13 @@ public class NetatmoAPI implements INetatmoClientConstant {
         return null;
     }
 
-    private static HttpPost getAuthKeyHttpPost(String user, String password, String key, String value) {
+    private static HttpPost getAuthKeyHttpPost(final NetatmoConfig config) {
         HttpPost post = new HttpPost(AUTH_TOKEN);
-        
+
         List<NameValuePair> params = new ArrayList<NameValuePair>(3);
         params.add(new BasicNameValuePair("grant_type", "password"));
-        params.add(new BasicNameValuePair("client_id", key));
-        params.add(new BasicNameValuePair("client_secret", value));
-        params.add(new BasicNameValuePair("username", user));
-        params.add(new BasicNameValuePair("password", password));
-        
+        params.addAll(config.getPairs());
+
         try {
             post.setEntity(new UrlEncodedFormEntity(params, UTF8));
             return post;
@@ -80,7 +79,7 @@ public class NetatmoAPI implements INetatmoClientConstant {
         return null;
     }
 
-    public static HttpPost getAuthHttpPost(String user, String password, String sessionId) {
+    public static HttpPost getAuthHttpPost(final String user, final String password, final String sessionId) {
         HttpPost post = new HttpPost(URL_LOGIN);
 
         List<NameValuePair> params = new ArrayList<NameValuePair>(4);
