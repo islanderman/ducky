@@ -2,10 +2,16 @@ package us.chenyang.ducky.pusher.wunderground;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.Collections;
+import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
+import us.chenyang.ducky.client.INetatmoClientConstant;
+import us.chenyang.ducky.client.NetatmoAPI;
 import us.chenyang.ducky.pusher.pwsstation.PWSSyncAPI;
 import us.chenyang.ducky.shared.model.NetatmoConfig;
 import us.chenyang.ducky.shared.model.PWSConfig;
@@ -32,11 +38,15 @@ public final class Pusher {
             pwsConfig = new PWSConfig(pwsId, psw);
         }
 
-        String url = null;
-
+        String url = "";
+        Map<String, Object> map = Collections.emptyMap();
         while (true) {
             try {
-                String temp = WUndergroundAPI.getURL(netatnoConfig, wuConfig);
+                JsonNode node = NetatmoAPI.getNode(INetatmoClientConstant.API_GETMEASURE, netatnoConfig);
+                map = WUndergroundAPI.getMap(node);
+                
+                String temp = WUndergroundAPI.constructUrl(wuConfig, map);
+
                 if (StringUtils.equalsIgnoreCase(temp, url)) {
                     Thread.sleep(1000 * 30);
                     continue;
@@ -57,6 +67,7 @@ public final class Pusher {
                     Thread.sleep(1000 * 60);
                 }
             } catch (IOException | InterruptedException | RuntimeException e) {
+                System.err.println(map.toString());
                 System.err.println(e.getMessage());
             }
         }

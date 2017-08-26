@@ -49,7 +49,6 @@ public class WUndergroundAPI implements IWUndergroundClientConstant {
             String utcStr = getUTC(utc);
             map.put("dateutc", utcStr);
 
-            System.out.println(ZonedDateTime.ofInstant(Instant.ofEpochSecond(utc), ZoneOffset.systemDefault()));
             map.put("baromin", baromin);
             map.put("indoortempf", indoorF);
             map.put("indoorhumidity", indoorHumidity);
@@ -79,9 +78,6 @@ public class WUndergroundAPI implements IWUndergroundClientConstant {
                 map.put("tempf", tempatureF);
                 map.put("dewptf", dewF);
 
-                System.out.println("Outside: "+tempatureC+"°C / "+ tempatureF + "°F");
-
-                
                 break;
             case "NAModule4":
                 // nothing to know
@@ -115,7 +111,7 @@ public class WUndergroundAPI implements IWUndergroundClientConstant {
         
     }
 
-    private static String constructUrl(final WUndergroundConfig config, final Map<String, Object> map) {
+    public static String constructUrl(final WUndergroundConfig config, final Map<String, Object> map) {
         StringBuilder builder = new StringBuilder(WUnderground_UPLOAD);
         builder.append("?ID=").append(config.getStationId()).append("&PASSWORD=").append(config.getWuPassword());
 
